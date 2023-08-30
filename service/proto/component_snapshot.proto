@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package roblox.girp.componentSnapshot;
+
+service ComponentSnapshot {
+ rpc GetCameras(GetCamerasRequest) returns (RccOutput) {}
+}
+
+message GetCamerasRequest {
+  string raw_metadata = 1;
+  string asset_id = 2;
+  string version = 3;
+  string asset_type = 4;
+  string snapshot_id = 5;
+}
+ 
+// GIRP service
+// ObjectMetadata list.
+message Metadata {
+  repeated ObjectMetadata object_metadata = 1;
+}
+
+// Meta data of an object.
+message ObjectMetadata {
+  repeated ChildMeta child_meta = 1;
+  // Full path that can uniquely identify the object in a game, for example “game:::1;;;Workspace:::1;;;MESS:::1;;;Head:::1;;;Handle:::1;;;Mesh:::1” 
+  string lineage = 2;
+  string name = 3;
+  string obj_class = 4;
+  int32 order = 5;
+  Position position = 6;
+  string camera_id = 7;
+  Rotation rotation = 8;
+  // Anything that uniquely identifies the single item. I.e. cameraId, lineage, assetId etc.
+  string id = 9;
+  // Url of the asset if applicable
+  string url = 10;
+  // Every other properties that will not fit into the reserved fields, serialized in string.
+  string properties = 11;
+}
+
+// Child meta.
+message ChildMeta {
+  string child_class = 1;
+  string child_name = 2;
+}	
+
+// Metadata categorized into 4 types.
+message MetadataWithType {
+  map<string, ObjectMetadata> model = 1;
+  map<string, ObjectMetadata> mesh_part = 2;
+  map<string, ObjectMetadata> special_mesh = 3;
+  map<string, ObjectMetadata> tool = 4;
+  int32 count = 5;
+}
+
+// Meta tree. 
+message MetaTree {
+  map<string, string> sound = 1;
+  map<string, string> image = 2;
+  map<string, string> text = 3;
+  map<string, string> video = 4;
+}
+
+// Info of an object.
+message SingleInfo {
+  string name = 1;
+  string full_path = 2;
+  string class_name = 3;
+  Position position = 4;
+  string mesh_id = 5;
+  string texture_id = 6;
+  string mesh_type = 7;
+  string text = 8;
+  string image_url = 9;
+  string video_url = 10;
+  string sound_url = 11;
+}
+
+// TBD.
+message AllDescendent {
+  int32 count = 1;
+  repeated SingleInfo info = 2;
+}
+
+// Output of the 1st rcc script.
+message RccOutput {
+  string place_version_hash_id = 1;
+  AllDescendent output_all_descendent = 2;
+  MetadataWithType output_human_bfs = 3;
+  MetadataWithType output_ml = 4;
+  MetaTree meta_tree = 5;
+  MetaTree meta_tree_dup_removed = 6;
+  repeated ObjectMetadata camera_results = 7;
+  // map of category to metadata result.
+  map<string, Metadata> metadata = 8;
+}
+
+// Position of the object.
+message Position {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+// Axis of camera.
+message Axis {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+// Specification of the camera placement.
+message Rotation {
+  Axis axis = 1;
+  double angle = 2;
+  Axis look_vector = 3;
+}
+
+// This is the schema for storing in database. It includes the ObjectMetadata as well as the url to snapshots, and 
+// moderation results by human and AI.
+message ProcessedObjectMetadata {
+  // This is in the format of place_snapshot_id/objectId
+  string primary_key = 1;
+  // unique identifier of a place snapshot request.
+  int64 place_snapshot_id = 2;
+  // place id being snapshotted.
+  int64 place_id = 3;
+  // place version being snapshotted.
+  int32 place_version = 4;
+  // md5 hash of the lineage field in ObjectMetadata, converted to base64 string.
+  string object_id = 5;
+  // object metadata from rcc output.
+  ObjectMetadata metadata = 6;
+  // File names for all the snapshot pictures for the game object.
+  repeated string filenames = 7;
+  // This is the assembled cdn url for each snapshot picture. For example, bucket url on the cdn can be 
+  // https://d28mj5j4g5mpzp.cloudfront.net, and primary key could be 123/objectid456, and file name can be 
+  // up.png, then the full url to up.png on cdn is
+  // https://d28mj5j4g5mpzp.cloudfront.net/123/objectid456/up.png
+  // This assembled url is stored for convenience access by front end and AI team, however if the cdn ever changes, then 
+  // this would be invalid and needs to be reassembled based on other fields by the user.
+  repeated string cdn_url = 8;
+  map<string, double> moderation_result = 9[deprecated = true];
+  // Ml moderation result serialized in bytes and converted into base64 string.
+  string serialized_ml_result = 10;
+}
