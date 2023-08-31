@@ -30,8 +30,8 @@ class ComponentSnapshotServicer(pb2_grpc.ComponentSnapshotServicer):
     
     def GetCameras(self, request, context):
         # get the string from the incoming request
-        logger.info(f'Receive model clustering request for Asset ID: {request.asset_id} - Version: {request.version} - Asset type: {request.asset_type} - Snapshot ID: {request.snapshot_id}')
-        logger.info(f'Start model clustering...')
+        logger.info(f'Receive request for Asset ID: {request.asset_id} - Version: {request.version} - Asset type: {request.asset_type} - Snapshot ID: {request.snapshot_id}')
+        logger.info(f'Start component snapshot...')
         
         processor = Processor(
             metadata=request.raw_metadata, 
@@ -39,7 +39,7 @@ class ComponentSnapshotServicer(pb2_grpc.ComponentSnapshotServicer):
         processor.transform()
 
         cameras = [c.parse_to_proto() for c in processor.cameras]
-        logger.info(f'Finished model clustering.')
+        logger.info(f'Finished component snapshot.')
 
         result = {
             'metadata': {'cameras': pb2.Metadata(**{'object_metadata': cameras})}
@@ -47,7 +47,7 @@ class ComponentSnapshotServicer(pb2_grpc.ComponentSnapshotServicer):
         
         if not cameras:
             result = {}
-            logger.info(f'No cluster found...')
+            logger.info(f'No component found...')
 
         return pb2.RccOutput(**result)
 
@@ -64,9 +64,9 @@ def serve():
         reflection.SERVICE_NAME,
     )
     reflection.enable_server_reflection(SERVICE_NAMES, server)
-    server.add_insecure_port('[::]:50051')
+    server.add_insecure_port('[::]:50052')
     server.start()
-    logger.info(f'Initialized gRPC server for component snapshot on port 50051.')
+    logger.info(f'Initialized gRPC server for component snapshot on port 50052.')
     server.wait_for_termination()
 
 
