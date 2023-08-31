@@ -1,0 +1,9 @@
+version: "3"
+
+services: 
+  component_snapshot_grpc:
+    build: ./
+    container_name: component_snapshot_grpc
+    restart: always
+    ports: 
+      - "50051:50051"
