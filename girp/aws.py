@@ -29,16 +29,16 @@ class AWSProcessor(object):
             save_folder.mkdir()
 
         metadata_name = 'metadata.json'
-        if self.config.command == CommandType.CLUSTER_VIDEO_FOR_PLACE:
+        if self.config.command in [CommandType.CLUSTER_VIDEO_FOR_PLACE, CommandType.COMPONENT_SNAPSHOT] :
             metadata_name = 'cameras.json'
         if not (save_folder/metadata_name).is_file():
-            try:
-                s3.download_file(
-                    bucket_name, f'{snap}.json', str(save_folder/metadata_name))
-                print(f'download_metadata: Succeeded to download {snap}.json')
-            except:
-                shutil.rmtree(save_folder)
-                print(f'download_metadata: Failed to download {snap}.json')
+            # try:
+            s3.download_file(
+                bucket_name, f'{snap}.json', str(save_folder/metadata_name))
+            print(f'download_metadata: Succeeded to download {snap}.json')
+            # except:
+            #     shutil.rmtree(save_folder)
+            #     print(f'download_metadata: Failed to download {snap}.json')
 
     def download_snapshots_from_s3(self, snap, save_folder: Path):
         s3_resource = boto3.resource('s3')
@@ -62,6 +62,38 @@ class AWSProcessor(object):
             # if not os.path.exists(f'{folder}/{key}-{os.path.basename(obj.key)}'):
             #     bucket.download_file(obj.key, f'{folder}/{key}-{os.path.basename(obj.key)}')
             #     print(f'Downloaded {folder}/{key}-{os.path.basename(obj.key)}')
+
+
+
+    def download_components(self, snap, save_folder: Path):
+        s3_resource = boto3.resource('s3')
+        if self.config.env == Environment.PROD:
+            bucket_name = 'place-snapshot-items'
+        elif self.config.env == Environment.ST3:
+            bucket_name = 'place-snapshot-items-test'
+        bucket = s3_resource.Bucket(bucket_name)
+
+        if not save_folder.exists(): save_folder.mkdir()
+        component_save_folder = save_folder / 'components'
+        if not component_save_folder.exists(): component_save_folder.mkdir()
+
+        count = 0
+        for obj in bucket.objects.filter(Prefix=str(snap)):
+            count += 1
+            file_name = obj.key.split('componentSnapshot-')[-1].split('|<=*=>|')[-1]
+            file_name = file_name.replace("/", ".")
+            image_path = component_save_folder / file_name
+                
+            if not image_path.is_file():
+                try:
+                    bucket.download_file(obj.key, str(image_path))
+                    print(f'download_component: snapshot {obj.key} downloaded')
+                except:
+                    print(f'download_component: Failed to download {obj.key}')
+            else:
+                print(f'download_component: snapshot {obj.key} already downloaded')
+        print(f'download_component: {count} snapshots completed')
+
 
     def download_videos_from_s3(self, snap, save_folder:Path, merge_video: bool = True):
         if self.config.env == Environment.PROD:

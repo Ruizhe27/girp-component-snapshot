@@ -6,6 +6,7 @@ class CommandType(Enum):
     SNAPSHOT_FOR_PLACE = 1
     PLACE_INFO_GATHERER = 2
     MODEL_INFO_GATHERER = 3
+    COMPONENT_SNAPSHOT = 4
 
 
 class Environment(Enum):

@@ -1,5 +1,4 @@
 import numpy as np
-import uuid
 import json
 
 
@@ -61,7 +60,9 @@ class Camera(object):
             component_id: str = None, 
             ancestors: [int] = None,
             start_idx: int = None,
-            end_idx: int = None) -> None:
+            end_idx: int = None,
+            url: str = None,
+            component_type: str = 'MODEL') -> None:
         self.position = position
         self.lookat = lookat
         self.orientation = orientation
@@ -69,6 +70,8 @@ class Camera(object):
         self.ancestors = ancestors
         self.start_idx = start_idx
         self.end_idx = end_idx
+        self.url = url
+        self.component_type = component_type
 
     def loads(self, lua_metadata):
         position = lua_metadata['position']
@@ -87,7 +90,7 @@ class Camera(object):
         return f"Camera (posistion: {self.position}, orientation: {self.orientation}, camera_id: componentSnapshot-{self.component_id}, start_idx: {self.start_idx}, end_idx: {self.end_idx})"
 
     def parse_to_proto(self):
-        return {
+        camera = {
             "camera_id": f'componentSnapshot-{self.component_id}',
             'position': {
                 'x': self.position.x,
@@ -101,23 +104,33 @@ class Camera(object):
                     'z': self.orientation.z
                 }
             },
-            'properties': json.dumps({'ancestor': self.ancestors, 'start': self.start_idx, 'end': self.end_idx})
+            'properties': json.dumps({'ancestor': self.ancestors, 'start': self.start_idx, 'end': self.end_idx, 'type': self.component_type})
         }
+        if self.url: camera['url'] = self.url
+        return camera
 
     def parse_to_lua(self):
         return {
             "cameraId": f'componentSnapshot-{self.component_id}',
             'position': {
-                'x': self.position.x,
-                'y': self.position.y,
-                'z': self.position.z
+                'x': float(self.position.x),
+                'y': float(self.position.y),
+                'z': float(self.position.z)
             },
             'rotation': {
                 'lookVector': {
-                    'x': self.orientation.x,
-                    'y': self.orientation.y,
-                    'z': self.orientation.z
+                    'x': float(self.orientation.x),
+                    'y': float(self.orientation.y),
+                    'z': float(self.orientation.z)
                 }
             },
-            'properties': json.dumps({'ancestor': self.ancestors, 'start': self.start_idx, 'end': self.end_idx})
+            'properties': json.dumps({'ancestor': self.ancestors, 'start': self.start_idx, 'end': self.end_idx, 'type': self.component_type})
         }
+
+
+    def parse_to_studio(self):
+        result = f'''
+            local lookAt = Vector3.new({self.position.x + self.orientation.x}, {self.position.y + self.orientation.y}, {self.position.z + self.orientation.z})
+            local cameraAt = Vector3.new({self.position.x}, {self.position.y}, {self.position.z})
+        '''
+        return result

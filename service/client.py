@@ -45,7 +45,7 @@ if __name__ == '__main__':
     argParser.add_argument("-p", "--port", required=False, type=int, help="Server Port.")
     args = argParser.parse_args()
     port = args.port
-    if not port: port = 50051
+    if not port: port = 50052
     client = ComponentSnapshotClient(port)
     metadata = args.metadata.read()
     # snap = '9159465565-806395725244989499'
@@ -59,5 +59,4 @@ if __name__ == '__main__':
         asset_type=args.asset_type,
         snapshot_id=args.snapshot_id
     )
-    print(result)
     print(str(result))

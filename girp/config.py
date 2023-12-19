@@ -19,6 +19,12 @@ class GIRPConfig(object):
         elif self.command == CommandType.CLUSTER_VIDEO_FOR_PLACE:
             self.metadataCommandType = 'PlaceInfoGatherer'
             self.SnapshotCommandType = 'ClustersVideoForPlace'
+        elif self.command == CommandType.COMPONENT_SNAPSHOT:
+            self.metadataCommandType = 'ModelInfoGatherer'
+            self.SnapshotCommandType = 'ComponentSnapshot'
 
         if self.env == Environment.PROD:
             self.SqsQueue = 'placeSnapshotWorkItemQueue'
+
+            if self.command == CommandType.COMPONENT_SNAPSHOT:
+                self.SqsQueue = 'placeSnapshotWorkItemQueue'

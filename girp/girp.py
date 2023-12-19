@@ -10,11 +10,11 @@ class GIRPProcessor(object):
         self.config = config
 
         if config.env == Environment.PROD:
-            self._girp_snapshot_url = "https://apis.roblox.com/game-snapshots/v1/GetSnapshotsForPlace"
-            self._api_key = "5306596e-2d39-42e5-98bd-3436be2ddc1f"
+            self._girp_snapshot_url = None
+            self._api_key = None
         elif config.env == Environment.ST3:
-            self._girp_snapshot_url = "https://apis.sitetest3.robloxlabs.com/game-snapshots/v1/GetSnapshotsForPlace"
-            self._api_key = "0ebca04a-4ab3-4a24-afb7-19b0775eb57a"
+            self._girp_snapshot_url = None
+            self._api_key = None
 
         self.headers = {"Roblox-Api-Key": self._api_key}
 
@@ -38,6 +38,28 @@ class GIRPProcessor(object):
 
         return self.snap
    
+    def component_snapshot(self, asset_id, version):
+
+        self.asset_id = asset_id
+        self.version = version
+
+        body = {
+            "placeId": asset_id,
+            "placeVersion": version,
+            "snapshotFormat": self.config.snapshotFormat,
+            "metadataCommandType": self.config.metadataCommandType,
+            "SnapshotCommandType": self.config.SnapshotCommandType,
+            "SqsQueue": self.config.SqsQueue,
+            "overrideHistory": self.config.overrideHistory
+        }
+
+        resp = requests.post(self._girp_snapshot_url,
+                             json=body,
+                             headers={"Roblox-Api-Key": self._api_key})
+        self.snap = json.loads(resp.text)['placeSnapshotId']
+
+        return self.snap
+    
 
     def cluster_video(self, asset_id, version):
 
